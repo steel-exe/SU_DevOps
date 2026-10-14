@@ -1,0 +1,211 @@
+---
+# =============================================================================
+# Ansible Playbook: site.yml
+# Project: Enterprise Student Record & Smart Library Platform (SU_DevOps)
+# Student Lead: Om Tambe (PRN: 2125UMLM1065) - Sandip University
+# Matches exact execution sequence from Om Tambe's deployment verification
+# =============================================================================
+
+- name: Configure Smart Library Server
+  hosts: library_servers
+  become: true
+  vars:
+    app_root_dir: /opt/library_platform
+    database_dir: /opt/library_platform/database
+    app_port: 5000
+    nginx_port: 80
+    container_name: library-app
+    image_name: library-platform:v1.0.0
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # Role: common
+    # -------------------------------------------------------------------------
+    - name: "common : Update apt package cache"
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: "common : Install system utilities"
+      ansible.builtin.apt:
+        name:
+          - curl
+          - wget
+          - git
+          - jq
+          - ufw
+          - ca-certificates
+          - gnupg
+          - lsb-release
+          - software-properties-common
+          - python3-pip
+        state: present
+
+    - name: "common : Allow SSH through UFW"
+      community.general.ufw:
+        rule: allow
+        port: '22'
+        proto: tcp
+
+    - name: "common : Allow HTTP through UFW"
+      community.general.ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+
+    - name: "common : Allow application port through UFW"
+      community.general.ufw:
+        rule: allow
+        port: '5000'
+        proto: tcp
+
+    # -------------------------------------------------------------------------
+    # Role: docker
+    # -------------------------------------------------------------------------
+    - name: "docker : Install Docker"
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - docker-compose
+        state: present
+
+    - name: "docker : Start and enable Docker"
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add ubuntu user to docker group
+      ansible.builtin.user:
+        name: ubuntu
+        groups: docker
+        append: true
+
+    # -------------------------------------------------------------------------
+    # Role: nginx
+    # -------------------------------------------------------------------------
+    - name: "nginx : Install Nginx"
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+
+    - name: "nginx : Configure Nginx reverse proxy"
+      ansible.builtin.copy:
+        dest: /etc/nginx/sites-available/library.conf
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          server {
+              listen {{ nginx_port }} default_server;
+              listen [::]:{{ nginx_port }} default_server;
+              server_name _;
+
+              location / {
+                  proxy_pass http://127.0.0.1:{{ app_port }};
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+              }
+
+              location /nginx-health {
+                  return 200 "Nginx operational\n";
+                  add_header Content-Type text/plain;
+              }
+          }
+
+    - name: "nginx : Enable library Nginx site"
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/library.conf
+        dest: /etc/nginx/sites-enabled/library.conf
+        state: link
+
+    - name: "nginx : Remove default Nginx site"
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: "nginx : Ensure Nginx is running"
+      ansible.builtin.systemd:
+        name: nginx
+        state: restarted
+        enabled: true
+
+    # -------------------------------------------------------------------------
+    # Role: library_app
+    # -------------------------------------------------------------------------
+    - name: "library_app : Ensure Docker service is running"
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+
+    - name: "library_app : Create application directory"
+      ansible.builtin.file:
+        path: "{{ app_root_dir }}"
+        state: directory
+        mode: '0755'
+        owner: ubuntu
+        group: ubuntu
+
+    - name: "library_app : Copy application files"
+      ansible.builtin.copy:
+        src: "../../unit-3-application-development/{{ item }}"
+        dest: "{{ app_root_dir }}/{{ item }}"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
+      loop:
+        - requirements.txt
+        - Dockerfile
+        - app
+
+    - name: "library_app : Create persistent database directory"
+      ansible.builtin.file:
+        path: "{{ database_dir }}"
+        state: directory
+        mode: '0777'
+        owner: ubuntu
+        group: ubuntu
+
+    - name: "library_app : Build library application image"
+      ansible.builtin.command:
+        cmd: "docker build -t {{ image_name }} {{ app_root_dir }}"
+      register: docker_build_result
+      changed_when: true
+
+    - name: "library_app : Run Library application container"
+      ansible.builtin.shell: |
+        docker stop {{ container_name }} || true
+        docker rm {{ container_name }} || true
+        docker run -d \
+          --name {{ container_name }} \
+          --restart always \
+          -p 127.0.0.1:{{ app_port }}:5000 \
+          -v {{ database_dir }}:/app/database \
+          {{ image_name }}
+      register: docker_run_result
+      changed_when: true
+
+    - name: "library_app : Verify library application health"
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ nginx_port }}/api/health"
+        method: GET
+        status_code: 200
+        return_content: true
+      register: health_check_result
+      retries: 5
+      delay: 3
+      until: health_check_result.status == 200 and health_check_result.json.status == "healthy"
+
+    - name: Print deployment summary
+      ansible.builtin.debug:
+        msg:
+          - "=========================================================="
+          - "Student Lead: Om Tambe (PRN: 2125UMLM1065)"
+          - "Application: Smart Library & Student Academic Platform"
+          - "Status: {{ health_check_result.json.status }}"
+          - "Nginx Port: {{ nginx_port }}"
+          - "Internal Port: {{ app_port }}"
+          - "Container: {{ container_name }} (Active)"
+          - "=========================================================="

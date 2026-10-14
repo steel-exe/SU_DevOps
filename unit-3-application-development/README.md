@@ -1,10 +1,17 @@
 # Unit 3: Application Development & Microservices
 
+**Project Lead:** Om Tambe  
+**PRN:** 2125UMLM1065  
+**Institution:** Sandip University  
+**Project:** Enterprise Student Record & Academic Management Platform (`SU_DevOps`)  
+
+---
+
 ## 1. Overview & Objectives
 
-**Unit 3** implements the core backend microservice for the **Enterprise Student Record and Academic Management Platform (`SU_DevOps`)**. 
+**Unit 3** implements the containerized backend microservice for the **Enterprise Student Record and Academic Management Platform (`SU_DevOps`)**. 
 
-Built with **Python 3.10+ / Flask 3.0**, this REST API provides deterministic, thread-safe student record management, course marks entry, and automated GPA calculations. The application is packaged in a security-hardened, multi-stage Docker container configured to run under unprivileged user execution.
+Developed using **Python 3.10+ / Flask 3.0**, this REST API delivers deterministic student lifecycle management, low-attendance (<75%) alerting, course mark grading, and backward compatibility with the Smart Library reference case study. The application is packaged in a security-hardened, multi-stage Docker container executed under non-root permissions.
 
 ---
 
@@ -18,93 +25,71 @@ unit-3-application-development/
 ├── app/
 │   ├── __init__.py         # Flask app package initialization & factory export
 │   ├── main.py             # REST API routes, error handlers, and application factory
-│   └── models.py           # Student domain model, grading logic & thread-safe repository
+│   └── models.py           # Domain models (Student, Book), grading engine & data store
 └── tests/
     ├── __init__.py         # Test package initialization
-    └── test_app.py         # Pytest verification suite (200, 201, 400, 404, 409 status codes)
+    └── test_app.py         # Pytest verification suite (14 test cases, 100% pass rate)
 ```
 
 ---
 
-## 3. REST API Contract & Specification
+## 3. REST API Contract & Endpoints
 
-| Method | Endpoint | Description | Request Body | Success Code | Error Codes |
-| :--- | :--- | :--- | :--- | :---: | :---: |
-| `GET` | `/api/health` | Service liveness & readiness probe | None | `200 OK` | — |
-| `GET` | `/api/students` | List all students (supports `?department=` & `?semester=`) | None | `200 OK` | `400 Bad Request` |
-| `POST` | `/api/students` | Register a new student record | `{"student_id", "name", "email", "department", "semester"}` | `201 Created` | `400`, `409 Conflict` |
-| `GET` | `/api/students/<student_id>` | Retrieve student profile and mark history by ID | None | `200 OK` | `404 Not Found` |
-| `POST` | `/api/students/<student_id>/marks` | Submit assessment mark and recalculate GPA | `{"course_code", "marks", "credits"}` | `201 Created` | `400`, `404 Not Found` |
-
-### Sample Payload: Register Student (`POST /api/students`)
-```json
-{
-  "student_id": "STD2026010",
-  "name": "DevOps Engineer",
-  "email": "devops@university.edu",
-  "department": "Computer Science",
-  "semester": 4
-}
-```
-
-### Sample Response: (`201 Created`)
-```json
-{
-  "message": "Student record created successfully.",
-  "student": {
-    "student_id": "STD2026010",
-    "name": "DevOps Engineer",
-    "email": "devops@university.edu",
-    "department": "Computer Science",
-    "semester": 4,
-    "enrolled_credits": 0,
-    "cumulative_gpa": 0.0,
-    "academic_standing": "Good Standing",
-    "marks_count": 0
-  }
-}
-```
+| Method | Endpoint | Description | Request Body | Success Code | Sample Response |
+| :--- | :--- | :--- | :--- | :---: | :--- |
+| `GET` | `/` | Root platform status probe | None | `200 OK` | `{"application": "Smart Library Management Platform", "status": "running"}` |
+| `GET` | `/api/health` | Service health status probe | None | `200 OK` | `{"status": "healthy"}` |
+| `GET` | `/api/books` | Reference catalog retrieval | None | `200 OK` | `[{"author": "F. Scott Fitzgerald", "id": 1, "title": "The Great Gatsby"}]` |
+| `GET` | `/api/students` | List student records (supports `?department=` & `?semester=`) | None | `200 OK` | `{"count": 2, "students": [...]}` |
+| `POST` | `/api/students` | Register a new student profile | `{"student_id", "name", "email", "department", "semester"}` | `201 Created` | `{"message": "Student record created successfully.", ...}` |
+| `GET` | `/api/students/<student_id>` | Single student profile lookup | None | `200 OK` | `{"student": {...}, "marks_history": [...]}` |
+| `POST` | `/api/students/<student_id>/marks` | Submit assessment mark & calculate GPA | `{"course_code", "marks", "credits"}` | `201 Created` | `{"message": "Academic mark recorded successfully.", ...}` |
 
 ---
 
-## 4. Local Development & Testing
+## 4. Local Development & Automated Testing
 
 ### 4.1 Prerequisites
-- Python 3.10+ installed
+- Python 3.10+
 - `pip` package manager
 
 ### 4.2 Setup & Dependencies
 ```bash
-# Navigate to the unit directory
+# Navigate to unit directory
 cd unit-3-application-development
 
 # Create and activate virtual environment
 python -m venv .venv
-
-# On Linux/macOS:
-source .venv/bin/activate
-# On Windows PowerShell:
-.\.venv\Scripts\Activate.ps1
+source .venv/bin/activate       # On Linux/macOS
+.\.venv\Scripts\Activate.ps1    # On Windows PowerShell
 
 # Install dependencies
 pip install -r requirements.txt
 ```
 
-### 4.3 Running Unit & Integration Tests
-Execute the comprehensive Pytest suite:
+### 4.3 Running Pytest Test Suite
 ```bash
 pytest tests/test_app.py -v
 ```
 
-To run with coverage metrics:
-```bash
-pytest --cov=app tests/
+**Verification Output:**
 ```
+tests/test_app.py::TestRootAndHealthEndpoints::test_root_endpoint_returns_running_status PASSED
+tests/test_app.py::TestRootAndHealthEndpoints::test_health_endpoint_returns_healthy PASSED
+tests/test_app.py::TestBooksCatalog::test_get_books_returns_great_gatsby PASSED
+tests/test_app.py::TestStudentManagementEndpoints::test_get_students_list PASSED
+tests/test_app.py::TestStudentManagementEndpoints::test_get_students_filter_by_department PASSED
+tests/test_app.py::TestStudentManagementEndpoints::test_get_students_invalid_semester_returns_400 PASSED
+tests/test_app.py::TestStudentManagementEndpoints::test_create_student_success PASSED
+tests/test_app.py::TestStudentManagementEndpoints::test_create_student_missing_fields_returns_400 PASSED
+tests/test_app.py::TestStudentManagementEndpoints::test_create_student_duplicate_id_returns_409 PASSED
+tests/test_app.py::TestStudentManagementEndpoints::test_get_student_by_id_success PASSED
+tests/test_app.py::TestStudentManagementEndpoints::test_get_student_by_id_not_found PASSED
+tests/test_app.py::TestAttendanceAndGrading::test_low_attendance_flag_triggered_below_75 PASSED
+tests/test_app.py::TestAttendanceAndGrading::test_record_marks_and_compute_gpa PASSED
+tests/test_app.py::TestAttendanceAndGrading::test_record_marks_out_of_range_returns_400 PASSED
 
-### 4.4 Running Locally via Flask Dev Server
-```bash
-python -m app.main
-# Server listens on http://127.0.0.1:5000
+============================= 14 passed in 0.34s ==============================
 ```
 
 ---
@@ -112,37 +97,23 @@ python -m app.main
 ## 5. Docker Containerization
 
 The container is built using a **multi-stage build pattern**:
-- **Builder Stage (`python:3.10-slim`):** Compiles wheels and installs dependencies.
-- **Runner Stage (`python:3.10-slim`):** Minimal runtime container, creates non-root user `appuser` (UID 1001), runs Gunicorn WSGI server, and implements active healthcheck probes.
+- **Builder Stage (`python:3.10-slim`):** Installs compiler tools and creates wheel packages.
+- **Runner Stage (`python:3.10-slim`):** Lightweight runtime executing as unprivileged user `appuser` (UID 1001), serving on port `5000` via Gunicorn.
 
-### 5.1 Build the Docker Image
 ```bash
+# Build the Docker image
 docker build -t student-academic-platform:latest .
-```
 
-### 5.2 Run the Docker Container
-```bash
-docker run -d \
-  --name student-api \
-  -p 5000:5000 \
-  --restart unless-stopped \
-  student-academic-platform:latest
-```
+# Run the container
+docker run -d -p 5000:5000 --name student-api student-academic-platform:latest
 
-### 5.3 Verify Container Status & Smoke Test
-```bash
-# Check container status and health
-docker ps --filter "name=student-api"
-
-# Healthcheck probe
-curl -i http://localhost:5000/api/health
-
-# Query student list
-curl -i http://localhost:5000/api/students
+# Verify health status
+curl http://localhost:5000/api/health
+# {"status": "healthy"}
 ```
 
 ---
 
-## 6. Next Step in Delivery Continuum
+## 6. Transition to Unit 4 (Infrastructure Automation)
 
 With the application containerized and tested, proceed to **Unit 4: Infrastructure Automation**, where HashiCorp Terraform provisions AWS cloud resources and Ansible automates Docker and Nginx reverse proxy deployment.

@@ -1,7 +1,8 @@
 # =============================================================================
 # HashiCorp Terraform Main Architecture Configuration
-# Enterprise Student Record & Academic Management Platform (SU_DevOps)
-# Provisions AWS VPC, Internet Gateway, Subnet, Security Group, EC2 & S3
+# Project: Enterprise Student Record & Smart Library Platform (SU_DevOps)
+# Student Lead: Om Tambe (PRN: 2125UMLM1065) - Sandip University
+# Provisions AWS VPC, Subnet, IGW, Route Table, SG, EC2 & Encrypted S3
 # =============================================================================
 
 terraform {
@@ -10,7 +11,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 5.100.0"
     }
   }
 }
@@ -22,70 +23,80 @@ provider "aws" {
     tags = {
       Project     = var.project_name
       Environment = var.environment
+      Lead        = "Om Tambe (2125UMLM1065)"
+      Institution = "Sandip University"
       ManagedBy   = "Terraform"
-      Platform    = "StudentAcademicManagement"
     }
   }
 }
 
 # -----------------------------------------------------------------------------
-# 1. Virtual Private Cloud (VPC) & Networking Fabric
+# 1. AWS Account Context & AMI SSM Parameter Discovery
 # -----------------------------------------------------------------------------
-resource "aws_vpc" "student_vpc" {
+data "aws_caller_identity" "current" {}
+
+data "aws_ssm_parameter" "ubuntu_ami" {
+  name = "/aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp2/ami-id"
+}
+
+# -----------------------------------------------------------------------------
+# 2. Virtual Private Cloud (VPC) & Networking Fabric
+# -----------------------------------------------------------------------------
+resource "aws_vpc" "library_vpc" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
 
   tags = {
-    Name = "${var.project_name}-vpc"
+    Name = "library_vpc"
   }
 }
 
-resource "aws_internet_gateway" "student_igw" {
-  vpc_id = aws_vpc.student_vpc.id
+resource "aws_internet_gateway" "library_igw" {
+  vpc_id = aws_vpc.library_vpc.id
 
   tags = {
-    Name = "${var.project_name}-igw"
+    Name = "library_igw"
   }
 }
 
-resource "aws_subnet" "student_public_subnet" {
-  vpc_id                  = aws_vpc.student_vpc.id
-  cidr_block              = var.public_subnet_cidr
+resource "aws_subnet" "library_subnet" {
+  vpc_id                  = aws_vpc.library_vpc.id
+  cidr_block              = var.subnet_cidr
   availability_zone       = var.availability_zone
   map_public_ip_on_launch = true
 
   tags = {
-    Name = "${var.project_name}-public-subnet"
+    Name = "library_subnet"
     Tier = "Public"
   }
 }
 
-resource "aws_route_table" "student_public_rt" {
-  vpc_id = aws_vpc.student_vpc.id
+resource "aws_route_table" "library_route_table" {
+  vpc_id = aws_vpc.library_vpc.id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.student_igw.id
+    gateway_id = aws_internet_gateway.library_igw.id
   }
 
   tags = {
-    Name = "${var.project_name}-public-rt"
+    Name = "library_route_table"
   }
 }
 
-resource "aws_route_table_association" "student_public_assoc" {
-  subnet_id      = aws_subnet.student_public_subnet.id
-  route_table_id = aws_route_table.student_public_rt.id
+resource "aws_route_table_association" "library_route_assoc" {
+  subnet_id      = aws_subnet.library_subnet.id
+  route_table_id = aws_route_table.library_route_table.id
 }
 
 # -----------------------------------------------------------------------------
-# 2. Stateful Security Group (Virtual Firewall)
+# 3. Stateful Security Group (library_sg)
 # -----------------------------------------------------------------------------
-resource "aws_security_group" "student_sg" {
-  name        = "${var.project_name}-web-sg"
-  description = "Security firewall permitting SSH, HTTP (Nginx), API (5000), and Alternate (8080)"
-  vpc_id      = aws_vpc.student_vpc.id
+resource "aws_security_group" "library_sg" {
+  name        = "library_sg"
+  description = "Security firewall permitting SSH, HTTP (Nginx), Application (5000), and Alternate (8080)"
+  vpc_id      = aws_vpc.library_vpc.id
 
   # Port 22: OpenSSH Remote Server Administration
   ingress {
@@ -96,7 +107,7 @@ resource "aws_security_group" "student_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Port 80: Nginx Reverse Proxy Public HTTP Traffic
+  # Port 80: Nginx Reverse Proxy Public Web Ingress
   ingress {
     description = "HTTP web ingress to Nginx reverse proxy"
     from_port   = 80
@@ -105,16 +116,16 @@ resource "aws_security_group" "student_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Port 5000: Direct Flask Microservice Application Ingress
+  # Port 5000: Direct Application API Ingress
   ingress {
-    description = "Direct application API access (Flask WSGI container)"
+    description = "Direct application access (Flask WSGI container)"
     from_port   = 5000
     to_port     = 5000
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Port 8080: Alternate Ingress / Automation / Jenkins Controller
+  # Port 8080: Alternate Web & CI/CD Proxy Ingress
   ingress {
     description = "Alternate web and CI/CD proxy port"
     from_port   = 8080
@@ -123,7 +134,7 @@ resource "aws_security_group" "student_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Outbound Egress: Unrestricted egress for OS package updates and Docker pulls
+  # Outbound Egress: Unrestricted for Ubuntu updates & Docker image pulls
   egress {
     description = "Permit all outbound egress traffic"
     from_port   = 0
@@ -133,37 +144,18 @@ resource "aws_security_group" "student_sg" {
   }
 
   tags = {
-    Name = "${var.project_name}-security-group"
+    Name = "library_sg"
   }
 }
 
 # -----------------------------------------------------------------------------
-# 3. Dynamic AMI Discovery (Ubuntu 22.04 LTS Jammy)
+# 4. EC2 Compute Host (library_server)
 # -----------------------------------------------------------------------------
-data "aws_ami" "ubuntu" {
-  most_recent = true
-
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-
-  owners = ["099720109477"] # Canonical official AWS account ID
-}
-
-# -----------------------------------------------------------------------------
-# 4. EC2 Compute Host for Application & Container Runtime
-# -----------------------------------------------------------------------------
-resource "aws_instance" "student_server" {
-  ami                         = data.aws_ami.ubuntu.id
+resource "aws_instance" "library_server" {
+  ami                         = data.aws_ssm_parameter.ubuntu_ami.value
   instance_type               = var.instance_type
-  subnet_id                   = aws_subnet.student_public_subnet.id
-  vpc_security_group_ids      = [aws_security_group.student_sg.id]
+  subnet_id                   = aws_subnet.library_subnet.id
+  vpc_security_group_ids      = [aws_security_group.library_sg.id]
   key_name                    = var.key_name
   associate_public_ip_address = true
 
@@ -173,21 +165,20 @@ resource "aws_instance" "student_server" {
     encrypted             = true
     delete_on_termination = true
     tags = {
-      Name = "${var.project_name}-root-ebs"
+      Name = "library_server_root_ebs"
     }
   }
 
-  # Cloud-init baseline provisioning
   user_data = <<-EOF
               #!/bin/bash
               set -e
               apt-get update -y
               apt-get install -y python3 python3-pip apt-transport-https ca-certificates curl gnupg lsb-release
-              echo "Workstation baseline ready for Ansible configuration management" > /tmp/bootstrap.log
+              echo "Server baseline ready for Ansible configuration" > /tmp/bootstrap.log
               EOF
 
   tags = {
-    Name = "${var.project_name}-ec2-app-host"
+    Name = "library_server"
     Role = "ApplicationHost"
   }
 }
@@ -195,30 +186,31 @@ resource "aws_instance" "student_server" {
 # -----------------------------------------------------------------------------
 # 5. Encrypted S3 Bucket for Database Backups & State Artifacts
 # -----------------------------------------------------------------------------
-resource "aws_s3_bucket" "backup_bucket" {
-  bucket_prefix = "su-devops-backup-"
+resource "aws_s3_bucket" "library_backup" {
+  bucket        = var.s3_backup_bucket_name
   force_destroy = true
 
   tags = {
-    Name        = "${var.project_name}-backup-store"
-    Description = "Persistent storage for SQLite database snapshots and audit archives"
+    Name        = var.s3_backup_bucket_name
+    Description = "Encrypted storage for SQLite database backups (library.db)"
   }
 }
 
-resource "aws_s3_bucket_versioning" "backup_versioning" {
-  bucket = aws_s3_bucket.backup_bucket.id
+resource "aws_s3_bucket_versioning" "library_backup_versioning" {
+  bucket = aws_s3_bucket.library_backup.id
 
   versioning_configuration {
     status = "Enabled"
   }
 }
 
-resource "aws_s3_bucket_server_side_encryption_configuration" "backup_encryption" {
-  bucket = aws_s3_bucket.backup_bucket.id
+resource "aws_s3_bucket_server_side_encryption_configuration" "library_backup_encryption" {
+  bucket = aws_s3_bucket.library_backup.id
 
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"
     }
+    bucket_key_enabled = false
   }
 }

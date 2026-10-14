@@ -1,13 +1,17 @@
-# Unit 4: Infrastructure Automation (AWS, Terraform & Ansible)
+# Unit 4: Infrastructure Automation (AWS Terraform & Ansible)
+
+**Project Lead:** Om Tambe  
+**PRN:** 2125UMLM1065  
+**Institution:** Sandip University  
+**Project:** Enterprise Student Record & Academic Management Platform (`SU_DevOps`)  
+
+---
 
 ## 1. Overview & Architectural Imperative
 
-**Unit 4** delivers the complete production infrastructure lifecycle automation for the **Enterprise Student Record and Academic Management Platform (`SU_DevOps`)**.
+**Unit 4** delivers the complete infrastructure lifecycle automation for the **Enterprise Student Record and Academic Management Platform (`SU_DevOps`)** with dual implementation of the Smart Library reference case study.
 
-In modern cloud engineering, manual server administration ("ClickOps") leads to configuration drift, human errors, slow deployments, and security vulnerabilities. Unit 4 achieves **100% environment reproducibility, zero configuration drift, and automated zero-touch server provisioning** by combining:
-
-1. **HashiCorp Terraform (v1.7+):** Declarative **Infrastructure as Code (IaC)** provisioning cloud fabric: custom AWS VPC, public subnet, Internet Gateway, route tables, security group firewall, EC2 compute instance, and encrypted S3 backup storage.
-2. **Ansible Core (v2.16+):** Agentless, idempotent **Configuration Management** over OpenSSH: installs Docker CE, configures an Nginx reverse proxy buffering to port 5000, deploys the Unit 3 containerized microservice, and executes automated multi-gate smoke tests.
+By combining **HashiCorp Terraform** (declarative Infrastructure as Code) and **Ansible Core** (agentless Configuration Management), the deployment achieves **100% environment reproducibility, zero configuration drift, and automated zero-touch server provisioning** on Amazon Web Services.
 
 ---
 
@@ -15,192 +19,149 @@ In modern cloud engineering, manual server administration ("ClickOps") leads to 
 
 ```
 unit-4-infrastructure-automation/
-├── README.md               # Unit architecture, execution, and validation guide
+├── README.md               # Unit architecture, execution, and verification manual
 ├── terraform/
-│   ├── main.tf             # Core HCL provisioning VPC, IGW, Subnet, SG, EC2, and S3
-│   ├── variables.tf        # Configurable deployment parameters (region, CIDR, key name)
-│   └── outputs.tf          # Exported infrastructure attributes (public IP, DNS, URLs)
+│   ├── main.tf             # AWS VPC, Subnet, IGW, Route Table, SG, EC2 & S3 definitions
+│   ├── variables.tf        # Configurable deployment input variables (region, CIDR, key name)
+│   └── outputs.tf          # Exported attributes (public IP: 98.92.102.185, URLs)
 └── ansible/
-    ├── playbook.yml        # Multi-tier playbook for Docker, Nginx, and App container
-    └── inventory.ini       # Static host inventory with SSH variables
+    ├── site.yml            # Primary multi-role deployment playbook (matching Om Tambe's log)
+    ├── playbook.yml        # Orchestration entrypoint (imports site.yml)
+    └── inventory.ini       # Target server inventory & SSH connection parameters
 ```
 
 ---
 
-## 3. The Two-Tier DevOps Orchestration Handshake
+## 3. Terraform Cloud Infrastructure Provisioning
 
-```
-┌────────────────────────────────┐                 ┌───────────────────────────────┐
-│     TIER 1: TERRAFORM          │                 │       TIER 2: ANSIBLE         │
-│     (Cloud IaC Fabric)         │                 │   (Configuration Management)  │
-├────────────────────────────────┤                 ├───────────────────────────────┤
-│ • AWS VPC (10.1.0.0/16)        │  Public IP      │ • Installs Docker CE & Nginx  │
-│ • Public Subnet (10.1.1.0/24)  │ ──────────────> │ • Deploys Student App (v1.0.0)│
-│ • Security Group (22,80,5000)  │  Handshake      │ • Configures Reverse Proxy    │
-│ • EC2 Ubuntu 22.04 LTS         │                 │ • Executes 4-Gate Smoke Tests │
-└────────────────────────────────┘                 └───────────────────────────────┘
-```
+### 3.1 Provisioned AWS Resources
+1. **Virtual Private Cloud (`aws_vpc.library_vpc`):** Custom VPC allocated CIDR `10.1.0.0/16`.
+2. **Internet Gateway (`aws_internet_gateway.library_igw`):** Attached to the VPC for public internet routing.
+3. **Public Subnet (`aws_subnet.library_subnet`):** Subnet allocated CIDR `10.1.1.0/24` with public IP auto-assignment.
+4. **Route Table (`aws_route_table.library_route_table`):** Routes all outbound `0.0.0.0/0` traffic to `library_igw`.
+5. **Security Group (`aws_security_group.library_sg`):** Firewall permitting ports:
+   - Port 22: OpenSSH Remote Server Administration
+   - Port 80: HTTP Web Ingress to Nginx Reverse Proxy
+   - Port 5000: Direct Application WSGI API Access
+   - Port 8080: Alternate Web & CI/CD Proxy Ingress
+6. **EC2 Compute Host (`aws_instance.library_server`):** AWS EC2 `t2.micro` (Ubuntu 22.04 LTS Jammy) with 20GB gp3 encrypted root EBS volume.
+7. **Encrypted Backup S3 Bucket (`aws_s3_bucket.library_backup`):** S3 bucket named `library-backup-334478199124-us-east-1` with S3 Versioning enabled and AES256 server-side encryption (`ServerSideEncryptionConfiguration`).
 
-### The Handshake Sequence
-1. **Terraform** provisions the AWS cloud fabric and outputs the public IP:
-   ```bash
-   app_server_ip=$(terraform -chdir=terraform output -raw ec2_public_ip)
-   ```
-2. The dynamic IP is injected into the Ansible inventory:
-   ```bash
-   sed -i "s/YOUR_EC2_PUBLIC_IP/$app_server_ip/g" ansible/inventory.ini
-   ```
-3. **Ansible** executes the idempotent playbook against the newly created EC2 host via SSH.
-
----
-
-## 4. Workstation Prerequisites & Toolchain Setup
-
-### 4.1 Toolchain Matrix
-
-| Tool | Minimum Version | Verification Command | Purpose |
-| :--- | :--- | :--- | :--- |
-| **AWS CLI v2** | `2.15.x+` | `aws --version` | Programmatic AWS authentication & STS checks |
-| **Terraform** | `1.7.x+` | `terraform -version` | Declarative cloud resource provisioning |
-| **Ansible Core**| `2.16.x+` | `ansible --version` | Agentless configuration & container orchestration |
-| **OpenSSH** | `8.0+` | `ssh -V` | Secure cryptographic communication |
-
-### 4.2 Step 1: AWS Programmatic Authentication
-Configure your AWS credentials:
+### 3.2 Step-by-Step Terraform Execution
 ```bash
-aws configure
-# AWS Access Key ID: <YOUR_ACCESS_KEY>
-# AWS Secret Access Key: <YOUR_SECRET_KEY>
-# Default region name: us-east-1
-# Default output format: json
-
-# Verify STS caller identity
-aws sts get-caller-identity
-```
-
-### 4.3 Step 2: SSH Key Pair Generation & AWS Import
-Generate a dedicated 4096-bit RSA SSH key pair and import it into AWS EC2 in `us-east-1`:
-```bash
-mkdir -p ~/.ssh
-ssh-keygen -t rsa -b 4096 -f ~/.ssh/student-aws-key -N "" -C "devops@student-academic-platform"
-chmod 400 ~/.ssh/student-aws-key
-chmod 644 ~/.ssh/student-aws-key.pub
-
-# Import key pair into AWS EC2
-aws ec2 import-key-pair \
-  --key-name "student-aws-key" \
-  --public-key-material fileb://~/.ssh/student-aws-key.pub \
-  --region us-east-1
-```
-
----
-
-## 5. Phase 1: Terraform Cloud Provisioning
-
-### 5.1 Navigate to Terraform Directory
-```bash
+# 1. Navigate to terraform directory
 cd unit-4-infrastructure-automation/terraform
-```
 
-### 5.2 Initialize Terraform Working Directory
-Downloads the `hashicorp/aws` provider plugin and configures backend state:
-```bash
+# 2. Initialize provider plugins (hashicorp/aws v5.100.0)
 terraform init
-```
 
-### 5.3 Validate HCL Syntax
-Verifies configuration files syntactically and semantically:
-```bash
+# 3. Validate HCL syntax and semantic rules
 terraform validate
-```
 
-### 5.4 Generate Execution Plan
-Inspects cloud state and outputs topological creation graph:
-```bash
-terraform plan -out=tfplan
-```
+# 4. Generate and inspect execution plan
+terraform plan
 
-### 5.5 Apply Configuration & Provision Resources
-Provisions VPC, Subnet, Route Table, Internet Gateway, Security Group, EC2 instance, and S3 bucket:
-```bash
-terraform apply tfplan
-```
-
-### 5.6 View Outputs
-```bash
-terraform output
-```
-
-Example Outputs:
-```
-ec2_public_ip          = "54.210.88.14"
-vpc_id                 = "vpc-0a8b9c7d1e"
-security_group_id      = "sg-0987654321fedcba"
-api_endpoint_via_nginx = "http://54.210.88.14/api/health"
+# 5. Apply configuration and provision AWS cloud resources
+terraform apply -auto-approve
 ```
 
 ---
 
-## 6. Phase 2: Ansible Configuration & Deployment
+## 4. Ansible Configuration Management & Deployment
 
-### 6.1 Update Ansible Inventory
-Navigate to the Ansible directory and update `inventory.ini` with the provisioned EC2 public IP:
+Ansible connects to the provisioned EC2 instance (`98.92.102.185`) over OpenSSH without requiring agent installation on the host.
+
+### 4.1 Playbook Roles & Task Sequence (`site.yml`)
+1. **Role `common`:**
+   - Update APT package cache
+   - Install system utilities (`curl`, `wget`, `git`, `jq`, `ufw`, `python3-pip`)
+   - Allow SSH (22), HTTP (80), and App (5000) through UFW firewall
+2. **Role `docker`:**
+   - Install Docker CE and docker-compose
+   - Start and enable Docker systemd service
+   - Add `ubuntu` user to `docker` group
+3. **Role `nginx`:**
+   - Install Nginx web server
+   - Configure Nginx reverse proxy routing port 80 to internal port 5000
+   - Enable library site and remove default site
+   - Ensure Nginx service is running and restarted
+4. **Role `library_app`:**
+   - Ensure Docker service is running
+   - Create application directory `/opt/library_platform`
+   - Copy application code, `requirements.txt`, and `Dockerfile`
+   - Create persistent database directory (`/opt/library_platform/database`)
+   - Build application Docker image (`library-platform:v1.0.0`)
+   - Run application container (`library-app`) on port 5000
+   - Verify health check endpoint returning `{"status": "healthy"}`
+
+### 4.2 Step-by-Step Ansible Execution
 ```bash
+# 1. Navigate to ansible directory
 cd ../ansible
 
-# Replace placeholder with Terraform output IP
-EC2_IP=$(terraform -chdir=../terraform output -raw ec2_public_ip)
-sed -i "s/YOUR_EC2_PUBLIC_IP/$EC2_IP/g" inventory.ini
+# 2. Verify syntax check
+ansible-playbook -i inventory.ini site.yml --syntax-check
+
+# 3. Execute orchestration playbook
+ansible-playbook -i inventory.ini site.yml
 ```
 
-### 6.2 Test SSH Connectivity (Ping)
-```bash
-ansible -i inventory.ini academic_servers -m ping
+**Expected Play Recap (Matching Om Tambe's Output):**
 ```
-
-### 6.3 Execute Deployment Playbook
-Run the multi-tier automation playbook:
-```bash
-ansible-playbook -i inventory.ini playbook.yml
+PLAY RECAP ********************************************************************
+98.92.102.185              : ok=20   changed=9    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
 ```
 
 ---
 
-## 7. Post-Deployment Validation & Four Verification Gates
+## 5. Post-Deployment Verification & Smoke Tests
 
-| Validation Gate | Verification Objective | Automated Command | Expected Output |
-| :--- | :--- | :--- | :--- |
-| **Gate 1: Network & OS** | Confirms host reachability and OpenSSH daemon | `nc -zv -w 5 $EC2_IP 22`<br>`ssh -i ~/.ssh/student-aws-key ubuntu@$EC2_IP uptime` | Open socket, system uptime displayed |
-| **Gate 2: Daemons & Ports**| Confirms Docker & Nginx services active | `ansible -i inventory.ini academic_servers -m systemd -a "name=docker state=started"`<br>`ansible -i inventory.ini academic_servers -m systemd -a "name=nginx state=started"` | `status=started` (ok) |
-| **Gate 3: App Container** | Verifies container is running with port 5000 | `ssh -i ~/.ssh/student-aws-key ubuntu@$EC2_IP "docker ps --filter name=student-academic-api --format '{{.Status}}'"` | Up X minutes (healthy) |
-| **Gate 4: API Smoke Tests**| End-to-end HTTP validation through Nginx (:80) | `curl -s -f http://$EC2_IP/api/health \| jq .status`<br>`curl -s -f http://$EC2_IP/api/students \| jq .count` | `"UP"`<br>`>= 2` |
+Verify the live application and AWS resources using the commands executed by Om Tambe:
 
-### Manual Live Smoke Test Commands
+### 5.1 Application Endpoint Smoke Tests
 ```bash
-# Test 1: Service Healthcheck (via Nginx Port 80)
-curl -i http://$EC2_IP/api/health
+# 1. Root Platform Status
+curl http://98.92.102.185/
+# Expected: {"application": "Smart Library Management Platform", "status": "running"}
 
-# Test 2: List Registered Students
-curl -i http://$EC2_IP/api/students
+# 2. Healthcheck Probe
+curl http://98.92.102.185/api/health
+# Expected: {"status": "healthy"}
 
-# Test 3: Create New Student
-curl -i -X POST http://$EC2_IP/api/students \
-  -H "Content-Type: application/json" \
-  -d '{"student_id": "STD2026888", "name": "Live Student", "email": "live@university.edu", "department": "CS", "semester": 3}'
+# 3. Books Catalog
+curl http://98.92.102.185/api/books
+# Expected: [{"author": "F. Scott Fitzgerald", "id": 1, "title": "The Great Gatsby"}]
 
-# Test 4: Record Marks & Calculate GPA
-curl -i -X POST http://$EC2_IP/api/students/STD2026888/marks \
-  -H "Content-Type: application/json" \
-  -d '{"course_code": "CS301", "marks": 92.5, "credits": 4}'
+# 4. Registered Students List
+curl http://98.92.102.185/api/students
+# Expected: {"count": 2, "students": [...]}
+```
+
+### 5.2 AWS S3 Backup Verification
+```bash
+# 1. Verify S3 Bucket Versioning
+aws s3api get-bucket-versioning \
+  --bucket library-backup-334478199124-us-east-1 \
+  --region us-east-1
+# Output: {"Status": "Enabled"}
+
+# 2. Verify S3 Server-Side Encryption
+aws s3api get-bucket-encryption \
+  --bucket library-backup-334478199124-us-east-1 \
+  --region us-east-1
+# Output: {"ServerSideEncryptionConfiguration": {"Rules": [{"ApplyServerSideEncryptionByDefault": {"SSEAlgorithm": "AES256"}}]}}
+
+# 3. Inspect S3 Database Backups
+aws s3 ls s3://library-backup-334478199124-us-east-1/backups/ --region us-east-1
+# Output: 2026-10-11 16:48:10      12288 library.db
 ```
 
 ---
 
-## 8. Clean De-provisioning & Teardown
+## 6. Teardown & Resource Deprovisioning
 
-To release AWS cloud resources and prevent ongoing costs:
+To systematically release all AWS cloud resources and avoid unnecessary charges:
 ```bash
 cd ../terraform
 terraform destroy -auto-approve
 ```
-This systematically terminates the EC2 host, removes the security group, deletes the public subnet, detaches the Internet Gateway, and destroys the VPC in topological order.

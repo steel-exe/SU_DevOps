@@ -1,214 +1,167 @@
 # Agile Sprint Execution Plan & Scrum Framework
 
 **Project Name:** Enterprise Student Record & Academic Management Platform (`SU_DevOps`)  
+**Student / Project Lead:** Om Tambe (PRN: 2125UMLM1065)  
+**Academic Institution:** Sandip University  
 **Sprint Cadence:** 2-Week Sprints (10 Working Days per Sprint)  
-**Team Composition:** 1 Product Owner, 1 Scrum Master, 3 Full-Stack Developers, 1 QA Engineer, 1 DevOps Engineer  
 **Document Version:** 1.0.0  
 
 ---
 
-## 1. Scrum Team Roles & Responsibilities
+## 1. Scrum Team Structure & Project Allocation
 
 ```
                       ┌────────────────────────────────────────┐
                       │             PRODUCT OWNER              │
-                      │  * Backlog Prioritization & Vision     │
-                      │  * Acceptance Criteria Verification    │
+                      │  * Om Tambe (PRN: 2125UMLM1065)        │
+                      │  * Backlog Prioritization & Acceptance │
                       └──────────────────┬─────────────────────┘
                                          │
                       ┌──────────────────▼─────────────────────┐
                       │              SCRUM MASTER              │
-                      │  * Facilitates Scrum Ceremonies        │
+                      │  * Facilitates Standups & Retros       │
                       │  * Removes Technical Impediments      │
                       └──────────────────┬─────────────────────┘
                                          │
          ┌───────────────────────────────┴───────────────────────────────┐
          │                               │                               │
 ┌────────▼───────────────┐   ┌───────────▼────────────┐   ┌──────────────▼────────┐
-│  DEVELOPMENT TEAM (3)  │   │    QA AUTOMATION (1)   │   │  DEVOPS ENGINEER (1)  │
-│  * Flask Microservice  │   │  * Pytest Unit & Int.  │   │  * Docker Packaging   │
-│  * Domain Models & API │   │  * API Performance     │   │  * Terraform & Ansible│
+│  BACKEND DEVELOPERS    │   │    QA AUTOMATION       │   │  DEVOPS & CLOUD       │
+│  * Flask REST API      │   │  * Pytest Unit & Int.  │   │  * Docker Packaging   │
+│  * Domain Models & GPA │   │  * Status Code Gates   │   │  * Terraform & Ansible│
 └────────────────────────┘   └────────────────────────┘   └───────────────────────┘
 ```
 
-| Role | Assigned Name | Core Responsibilities |
+| Role | Assigned Member | Core Responsibilities |
 | :--- | :--- | :--- |
-| **Product Owner** | Maya Sen | Owns product vision, manages and prioritizes the Product Backlog, signs off on User Stories, liaises with university registrar and faculty stakeholders. |
-| **Scrum Master** | David Chen | Shields the development team from external disruptions, facilitates Daily Standups, Sprint Planning, Reviews, and Retrospectives, enforces Agile principles. |
-| **Backend Engineer 1** | Priya Sharma | Implements Flask REST API endpoints, domain models (`models.py`), schema validations, and database interactions. |
-| **Backend Engineer 2** | Alex Rivera | Builds grading logic, attendance calculations, GPA algorithms, and error-handling middlewares. |
-| **Frontend/API Dev** | Rohan Das | Develops API contract schemas, OpenAPI documentation, and client-side testing fixtures. |
-| **QA Automation** | Ananya Verma | Author of Pytest unit and integration test suite (`tests/test_app.py`), validates acceptance criteria, conducts smoke testing. |
-| **DevOps Specialist** | Shivraj K | Authors multi-stage Dockerfile, HashiCorp Terraform AWS IaC modules, and Ansible idempotent playbooks. |
+| **Project Lead & Product Owner** | Om Tambe (PRN: 2125UMLM1065) | Defines product vision, prioritizes the Product Backlog, signs off on User Stories, coordinates academic compliance. |
+| **Scrum Master** | Agile Delivery Coach | Shields team from external interruptions, conducts Daily Scrums, Sprint Reviews, and Retrospectives, enforces DoD. |
+| **Backend & Microservice Devs** | Development Team | Implements Flask REST endpoints (`main.py`), validation rules, domain entities (`models.py`), and GPA calculation. |
+| **QA Automation Engineer** | Test Automation Team | Develops automated Pytest suite (`test_app.py`), asserts HTTP status codes (200, 201, 400, 404, 409). |
+| **DevOps & Cloud Architect** | Om Tambe & Cloud Ops | Authors Dockerfile, HashiCorp Terraform AWS configurations, Ansible automation playbooks, and smoke test gates. |
 
 ---
 
-## 2. Sprint 1 Execution Plan: Foundation, Auth & Project Setup
+## 2. Sprint 1 Execution Plan: Foundation, Core API & Cloud Provisioning
 
-- **Sprint Goal:** Establish repository foundation, continuous integration, user authentication architecture, and core project containerization setup.
+- **Sprint Goal:** Establish repository foundation, implement the core Student Records REST API, package into Docker, and provision AWS cloud fabric via Terraform.
 - **Sprint Duration:** Weeks 1–2 (10 Working Days)
-- **Target Velocity / Capacity:** 20 Story Points (160 Total Engineering Hours)
+- **Target Velocity / Capacity:** 25 Story Points (160 Engineering Hours)
 
-### 2.1 Sprint 1 Backlog & Detailed Task Breakdown
+### 2.1 Sprint 1 Backlog & Task Breakdown
 
-| Story ID | Task ID | Task Description | Assignee | Est. Hours | Status |
+| Story ID | Task ID | Description | Assignee | Est. Hours | Status |
 | :--- | :--- | :--- | :--- | :---: | :---: |
-| **US-001** | T-101 | Initialize Git repository with Units 1–4 folder structure and `.gitignore`. | Shivraj K | 4h | Done |
-| **US-001** | T-102 | Create Unit 1 FRS, NFRS, and Design Thinking architecture documentation. | Maya Sen | 12h | Done |
-| **US-001** | T-103 | Configure Python virtual environment, `requirements.txt`, and Pytest test runner. | Priya Sharma | 6h | Done |
-| **US-002** | T-104 | Implement password hashing helper utilities using `bcrypt` and salt generation. | Alex Rivera | 8h | Done |
-| **US-002** | T-105 | Build JWT token generation and authorization header validation decorator. | Priya Sharma | 12h | Done |
-| **US-002** | T-106 | Implement `/api/auth/login` endpoint with credential verification and rate limit. | Alex Rivera | 10h | Done |
-| **US-003** | T-107 | Design time-expiring one-time password reset token mechanism. | Rohan Das | 8h | Done |
-| **US-004** | T-108 | Implement Role-Based Access Control (RBAC) middleware for Student vs. Faculty. | Priya Sharma | 10h | Done |
-| **US-004** | T-109 | Author Pytest tests for unauthorized (`401`) and forbidden (`403`) access cases. | Ananya Verma | 10h | Done |
-| **US-019** | T-110 | Author lightweight multi-stage Dockerfile with non-root security execution. | Shivraj K | 8h | Done |
-| **US-001** | T-111 | Setup `/api/health` heartbeat endpoint for container health probes. | Rohan Das | 4h | Done |
+| **US-01** | T-101 | Implement credential hashing using `bcrypt` and JWT token generator with 60-min TTL. | Backend Dev | 8h | Done |
+| **US-02** | T-102 | Create RBAC decorator enforcing Admin, Faculty, Student, and Exam Cell role permissions. | Backend Dev | 8h | Done |
+| **US-03** | T-103 | Build `Student` domain model (`app/models.py`) with strict email, ID, and semester validation. | Backend Dev | 8h | Done |
+| **US-03** | T-104 | Implement `POST /api/students` returning HTTP 201 on creation and HTTP 409 on duplicates. | Backend Dev | 6h | Done |
+| **US-05** | T-105 | Implement `GET /api/students/<student_id>` returning HTTP 200 or HTTP 404 Not Found. | Backend Dev | 4h | Done |
+| **US-06** | T-106 | Implement `GET /api/students` supporting `?department=` and `?semester=` query filters. | Backend Dev | 6h | Done |
+| **US-15** | T-107 | Author multi-stage Dockerfile (`python:3.10-slim`) running under unprivileged user `appuser`. | Om Tambe | 8h | Done |
+| **US-16** | T-108 | Write Terraform HCL provisioning AWS VPC (`library_vpc`), subnet, IGW, and security group. | Om Tambe | 14h | Done |
+| **US-16** | T-109 | Configure Terraform resources for EC2 `library_server` and encrypted S3 backup bucket. | Om Tambe | 10h | Done |
+| **US-03** | T-110 | Build automated Pytest suite asserting 200, 201, 400, 404, and 409 status codes. | QA Lead | 12h | Done |
 
-### 2.2 Sprint 1 Scrum Ceremonies Simulation Log
+### 2.2 Sprint 1 Scrum Ceremonies Log
 
-#### Daily Scrum Sample (Sprint 1, Day 4):
-- **Priya Sharma (Backend):**
-  - *Yesterday:* Completed JWT token decorator logic and claims extraction.
-  - *Today:* Integrating RBAC decorator with the `/api/students` route handlers.
-  - *Blockers:* None; waiting for QA to review the mock payload fixtures.
-- **Ananya Verma (QA):**
-  - *Yesterday:* Wrote 8 unit test cases for password hashing and invalid login boundaries.
-  - *Today:* Automating token expiration tests with Pytest fixtures.
+#### Daily Scrum Sample (Sprint 1, Day 6):
+- **Om Tambe (Project Lead / DevOps):**
+  - *Yesterday:* Validated Terraform configuration syntax and verified execution plan creating VPC `10.1.0.0/16` and EC2 `t2.micro` compute instance.
+  - *Today:* Configuring S3 bucket encryption with AES-256 and enabling S3 versioning.
+  - *Blockers:* None; AWS credentials authenticated via STS.
+- **Backend Developer:**
+  - *Yesterday:* Finished student input validation rules for `student_id`, email regex, and semester constraints.
+  - *Today:* Implementing the thread-safe repository store with re-entrant locking (`RLock`).
   - *Blockers:* None.
-- **Shivraj K (DevOps):**
-  - *Yesterday:* Tested Docker container build on `python:3.10-slim`.
-  - *Today:* Adding non-root user `appuser` and validating healthcheck directive.
-  - *Blockers:* None.
-
-#### Sprint 1 Review & Demo:
-- Demonstrated live containerized Flask application running locally on port 5000.
-- Successfully demonstrated `/api/health` returning `{"status": "UP"}`.
-- Simulated JWT authentication flow rejecting invalid credentials and generating valid tokens.
-- **Sprint 1 Retrospective:**
-  - *What went well:* Early containerization prevented dependency discrepancies across developer machines.
-  - *What can improve:* Mock data generation needs to be standardized across models to speed up unit test creation.
 
 ---
 
-## 3. Sprint 2 Execution Plan: Student Management & Infrastructure Automation
+## 3. Sprint 2 Execution Plan: Academic Logic, Ansible Automation & Edge Proxy
 
-- **Sprint Goal:** Implement the complete Student Records REST API, validation logic, Pytest verification suite, and automated AWS Cloud deployment using Terraform & Ansible.
+- **Sprint Goal:** Deliver attendance tracking with automated low-attendance (<75%) flags, continuous marks grading, automated Ansible deployment with Nginx reverse proxy, and post-deployment validation.
 - **Sprint Duration:** Weeks 3–4 (10 Working Days)
-- **Target Velocity / Capacity:** 26 Story Points (180 Total Engineering Hours)
+- **Target Velocity / Capacity:** 28 Story Points (180 Engineering Hours)
 
-### 3.1 Sprint 2 Backlog & Detailed Task Breakdown
+### 3.1 Sprint 2 Backlog & Task Breakdown
 
-| Story ID | Task ID | Task Description | Assignee | Est. Hours | Status |
+| Story ID | Task ID | Description | Assignee | Est. Hours | Status |
 | :--- | :--- | :--- | :--- | :---: | :---: |
-| **US-005** | T-201 | Build `Student` domain model (`app/models.py`) with strict validation rules. | Priya Sharma | 8h | Done |
-| **US-005** | T-202 | Implement `POST /api/students` endpoint returning HTTP 201 on success. | Priya Sharma | 10h | Done |
-| **US-006** | T-203 | Implement `GET /api/students/<student_id>` with HTTP 200/404 handling. | Alex Rivera | 6h | Done |
-| **US-007** | T-204 | Implement `GET /api/students` with query parameter filtering (department, semester). | Alex Rivera | 8h | Done |
-| **US-014** | T-205 | Build `POST /api/students/<id>/marks` for academic performance and GPA update. | Rohan Das | 10h | Done |
-| **US-005** | T-206 | Author comprehensive Pytest suite (`tests/test_app.py`) covering all status codes. | Ananya Verma | 14h | Done |
-| **US-020** | T-207 | Write Terraform configuration (`main.tf`, `variables.tf`, `outputs.tf`) for AWS VPC & EC2. | Shivraj K | 16h | Done |
-| **US-020** | T-208 | Configure AWS Security Group opening ports 22 (SSH), 80 (HTTP), 5000, and 8080. | Shivraj K | 6h | Done |
-| **US-020** | T-209 | Author Ansible playbook (`playbook.yml`) installing Docker, Nginx, and deploying container. | Shivraj K | 16h | Done |
-| **US-020** | T-210 | Configure Ansible inventory (`inventory.ini`) and Nginx reverse proxy to port 5000. | Shivraj K | 8h | Done |
-| **US-005** | T-211 | Execute end-to-end smoke test gate verifying live API health on AWS EC2. | Team | 6h | Done |
-
-### 3.2 Sprint 2 Scrum Ceremonies Simulation Log
-
-#### Daily Scrum Sample (Sprint 2, Day 7):
-- **Priya Sharma (Backend):**
-  - *Yesterday:* Completed model validation rejecting empty IDs and malformed emails.
-  - *Today:* Connecting in-memory and persistence layer to the Flask route blueprint.
-  - *Blockers:* None.
-- **Shivraj K (DevOps):**
-  - *Yesterday:* Tested Terraform provisioning of AWS VPC (10.1.0.0/16) and Security Group.
-  - *Today:* Authoring Ansible reverse proxy configuration templating Nginx to forward port 80 to container port 5000.
-  - *Blockers:* Needed confirmed list of security group ports (22, 80, 5000, 8080)—now resolved.
+| **US-09** | T-201 | Build session attendance submission endpoint supporting Present, Absent, and Excused. | Backend Dev | 8h | Done |
+| **US-10** | T-202 | Implement real-time aggregate attendance formula with percentage calculations. | Backend Dev | 6h | Done |
+| **US-11** | T-203 | Implement automatic low-attendance (<75%) warning flag engine and alert dispatcher. | Backend Dev | 8h | Done |
+| **US-12** | T-204 | Implement `POST /api/students/<id>/marks` validating scores between 0.0 and 100.0. | Backend Dev | 8h | Done |
+| **US-13** | T-205 | Build automatic SGPA and CGPA computation engine on a 10-point academic scale. | Backend Dev | 8h | Done |
+| **US-17** | T-206 | Author Ansible playbook (`site.yml` / `playbook.yml`) with baseline utilities and UFW rules. | Om Tambe | 12h | Done |
+| **US-17** | T-207 | Configure Ansible tasks to install Docker CE, containerd, and configure systemd service. | Om Tambe | 8h | Done |
+| **US-17** | T-208 | Configure Nginx reverse proxy forwarding port 80 to container port 5000 with buffering. | Om Tambe | 10h | Done |
+| **US-17** | T-209 | Build and launch application Docker container via Ansible with healthcheck probing. | Om Tambe | 8h | Done |
+| **US-17** | T-210 | Execute Four-Tier Post-Deployment Validation Gates (Network, Daemons, Container, API). | Om Tambe | 6h | Done |
 
 ---
 
 ## 4. Definition of Done (DoD) & Definition of Ready (DoR)
 
 ### 4.1 Definition of Ready (DoR)
-A User Story is marked **Ready** for Sprint Backlog inclusion only if:
-- [x] Written in standard format with clear business rationale.
-- [x] Acceptance Criteria are explicitly defined, unambiguous, and testable.
-- [x] Dependencies on external systems or prior stories are resolved.
+A User Story enters the sprint only when:
+- [x] Clear business value statement adhering to Agile format.
+- [x] Unambiguous, testable Acceptance Criteria established.
 - [x] Story points estimated collaboratively via Planning Poker.
-- [x] Story size fits comfortably within a single sprint duration (< 8 points).
+- [x] Cross-story dependencies resolved.
+- [x] Architectural feasibility confirmed by Project Lead (Om Tambe).
 
 ### 4.2 Definition of Done (DoD)
-A User Story is marked **Done** and releasable only if:
-- [x] Code adheres to PEP 8 Python coding standards and has passed static linting.
-- [x] All unit and integration tests execute cleanly with 100% pass rate in Pytest.
-- [x] Code test coverage exceeds 85% with zero regressions.
-- [x] Dockerfile builds cleanly without root privilege execution.
-- [x] Peer code review approved by at least one Senior Engineer.
-- [x] Documentation, API contracts, and README files are updated.
-- [x] Verified in a production-identical staging environment.
+A User Story is marked **Done** and releasable only when:
+- [x] Code strictly adheres to PEP 8 standards with zero critical linting errors.
+- [x] All Pytest automated unit tests pass with a **100% pass rate**.
+- [x] Dockerfile builds successfully with multi-stage separation and non-root execution.
+- [x] Terraform configuration passes `terraform validate` and `terraform plan`.
+- [x] Ansible playbook runs idempotently without unexpected failures (`failed=0`).
+- [x] Four Post-Deployment Validation Gates pass on live AWS EC2 host.
+- [x] Documentation, API contracts, and README files are fully updated.
 
 ---
 
-## 5. Scrum Board Workflow & Visual Representation
+## 5. Scrum Board Workflow & Sprint Burndown
 
 ```
 ┌──────────────┬──────────────┬──────────────┬──────────────┬──────────────┐
 │   BACKLOG    │    TO DO     │ IN PROGRESS  │   TESTING    │     DONE     │
 ├──────────────┼──────────────┼──────────────┼──────────────┼──────────────┤
-│ US-010       │ US-008       │ US-014       │ US-005       │ US-001       │
-│ Add Course   │ Update Std   │ Add Marks    │ Create Std   │ Project Setup│
+│ US-04        │ US-08        │ US-12        │ US-03        │ US-01        │
+│ Bulk CSV     │ Elective Reg │ Grade Engine │ Create Std   │ Login Auth   │
 │              │              │              │              │              │
-│ US-011       │ US-009       │ US-020       │ US-006       │ US-002       │
-│ Enroll Std   │ Archive Std  │ Ansible Play │ Get Std by ID│ Login Auth   │
+│ US-14        │ US-11        │ US-17        │ US-05        │ US-02        │
+│ Transcripts  │ Att. Alerts  │ Ansible Play │ Get Std ID   │ RBAC Rules   │
 │              │              │              │              │              │
-│ US-012       │ US-013       │              │ US-007       │ US-019       │
-│ Attendance   │ Att. View    │              │ Filter Stds  │ Dockerfile   │
+│              │              │              │ US-06        │ US-15        │
+│              │              │              │ Filter Stds  │ Dockerfile   │
+│              │              │              │              │              │
+│              │              │              │              │ US-16        │
+│              │              │              │              │ Terraform    │
 └──────────────┴──────────────┴──────────────┴──────────────┴──────────────┘
 ```
 
----
-
-## 6. Sprint Velocity & Burndown Projections
-
-```
-Story
-Points
-  30 ┼───●
-     │    \
-  25 ┼     \
-     │      ●
-  20 ┼       \
-     │        \
-  15 ┼         ●
-     │          \
-  10 ┼           \
-     │            ●
-   5 ┼             \
-     │              \
-   0 ┼───┴───┴───┴───┴──●────
-     D1  D3  D5  D7  D9 D10   (Days)
-     ─── Actual Remaining Points   ┈┈┈ Ideal Burn
-```
-
-- **Sprint 1 Velocity:** 20 Story Points completed.
-- **Sprint 2 Velocity:** 26 Story Points completed.
-- **Total Release Velocity:** 46 Story Points across 4 calendar weeks.
+### Sprint Velocity Metrics
+- **Sprint 1 Velocity:** 25 Story Points delivered.
+- **Sprint 2 Velocity:** 28 Story Points delivered.
+- **Total Release Velocity:** 53 Story Points across 4 calendar weeks.
 
 ---
 
-## 7. Comparative Study of Agile Frameworks
+## 6. Comparative Study of Agile Frameworks
 
-To determine the optimal engineering methodology for the Student Record and Academic Management Platform, we evaluated 7 industry-recognized Agile frameworks:
-
-| Agile Framework | Core Mechanism | Strengths | Limitations | Best Fit For | Recommendation |
+| Framework | Cadence | Roles | Strengths | Limitations | Project Recommendation |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Scrum** | Time-boxed iterations (1–4 wk sprints), designated roles (PO, SM, Dev), 4 ceremonies. | Predictable cadence, clear accountability, excellent team transparency. | Scope change overhead during active sprint. | Small-to-medium cross-functional teams (5–9 people) with evolving feature scopes. | **SELECTED (Optimal for SU_DevOps)** |
-| **Kanban** | Continuous flow, visual work-in-progress (WIP) limits, cycle time optimization. | Highly flexible, minimizes context switching, excellent for support/maintenance. | Lack of fixed release commitments, no time-boxed accountability. | Maintenance teams, IT operations, continuous bug-fixing teams. | **Adopted for DevOps Ops** |
-| **Extreme Programming (XP)** | Test-Driven Development (TDD), Pair Programming, Continuous Refactoring. | Uncompromising code quality, immediate regression detection. | High developer fatigue, resistance from non-technical stakeholders. | High-risk algorithmic engineering, mission-critical systems. | **Engineering Practices Integrated** |
-| **Lean Development** | Eliminate waste, amplify learning, deliver as fast as possible. | Lean resource utilization, hyper-focused on customer value. | Requires deeply mature organizational discipline. | Early-stage startup MVP hypothesis validation. | **Principles Adopted** |
-| **Large Scale Scrum (LeSS)** | Scales standard Scrum across 2–8 teams working on a single product backlog. | Minimal management overhead, preserves true Scrum essence. | Complex backlog synchronization when teams exceed 8. | Mid-size multi-team product expansions (20–60 devs). | Evaluated for Future Phase |
-| **Scaled Agile Framework (SAFe)** | Highly structured enterprise framework with PI Planning, ARTs, and portfolio tiers. | Strong governance, aligns hundreds of developers to corporate goals. | Heavyweight, bureaucratic, expensive certification overhead. | Large enterprises (500+ developers), defense, banking institutions. | Overkill for current scope |
-| **Scrum@Scale** | Modular network of Scrum teams coordinating through Scrum of Scrums (SoS). | Highly scalable, preserves organic team agility without SAFe bureaucracy. | Requires experienced Scrum practitioners to avoid governance drift. | Fast-scaling technology organizations. | Evaluated for Campus-wide rollout |
+| **Scrum** | 1–4 week sprints | PO, SM, Dev Team | High accountability, predictable delivery, clear ceremony structure. | Rigidity in changing sprint scope mid-iteration. | **SELECTED (Optimal for SU_DevOps)** |
+| **Kanban** | Continuous flow | No mandated roles | Highly adaptive, visualizes WIP limits, minimizes cycle time. | Lack of time-boxed release commitments. | Adopted for infrastructure bug fixes |
+| **Extreme Programming (XP)** | 1-week iterations | Customer, Devs | Test-Driven Development (TDD), continuous refactoring, pair programming. | High developer intensity, difficult for non-technical clients. | TDD & automated test practices adopted |
+| **Lean Development** | Continuous | Flexible | Eliminates waste, optimizes whole value stream, rapid delivery. | Requires high organizational maturity. | Principles applied to lean Docker packaging |
+| **Large Scale Scrum (LeSS)** | Multi-team sprint | Single PO, multi-team | Lightweight scaling for 2–8 teams on single backlog. | Coordination challenges when teams exceed 8. | Evaluated for university-wide rollout |
+| **Scaled Agile Framework (SAFe)**| Quarterly PI Planning | Release Train Engineer, PMs | Strong enterprise governance across hundreds of engineers. | Heavyweight, bureaucratic overhead. | Deemed excessive for current team size |
+| **Scrum@Scale** | Organic scaling | Scrum of Scrums | Scalable network of teams preserving standard Scrum. | Requires experienced Scrum leadership. | Suitable for future multi-campus expansion |
 
-### Conclusion & Recommendation:
-**Scrum** supplemented by **Extreme Programming (XP)** engineering practices (automated Pytest suites, TDD, and CI/CD pipelines) was chosen as the most suitable framework for the Student Record Platform. It delivers strict sprint accountability while maintaining rapid adaptability to university stakeholder feedback.
+---
+*Authored by:*  
+**Om Tambe (PRN: 2125UMLM1065)**  
+*Sandip University — SU_DevOps Engineering Curriculum*

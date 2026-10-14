@@ -1,6 +1,7 @@
 """
-Student Domain Model and Repository Layer.
-Provides domain entity validation, grading logic, and thread-safe data persistence.
+Domain Models and In-Memory Data Store.
+Authored by Om Tambe (PRN: 2125UMLM1065) - Sandip University.
+Encapsulates Student, Book, Course, Attendance, and Grading business logic.
 """
 
 import re
@@ -8,8 +9,24 @@ import threading
 from typing import Dict, List, Optional, Any
 
 
+class Book:
+    """Library book domain entity supporting Smart Library platform compatibility."""
+
+    def __init__(self, id: int, title: str, author: str):
+        self.id = int(id)
+        self.title = str(title).strip()
+        self.author = str(author).strip()
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "title": self.title,
+            "author": self.author,
+        }
+
+
 class Student:
-    """Domain model representing a university student and academic performance."""
+    """Student domain entity and academic performance calculator."""
 
     def __init__(
         self,
@@ -21,6 +38,7 @@ class Student:
         enrolled_credits: int = 0,
         cumulative_gpa: float = 0.0,
         academic_standing: str = "Good Standing",
+        attendance_percentage: float = 100.0,
     ):
         self.student_id = str(student_id).strip()
         self.name = str(name).strip()
@@ -30,6 +48,8 @@ class Student:
         self.enrolled_credits = int(enrolled_credits)
         self.cumulative_gpa = float(cumulative_gpa)
         self.academic_standing = academic_standing
+        self.attendance_percentage = float(attendance_percentage)
+        self.attendance_warning = self.attendance_percentage < 75.0
         self.marks_history: List[Dict[str, Any]] = []
 
     @classmethod
@@ -41,10 +61,7 @@ class Student:
         department: Optional[str] = None,
         semester: Any = 1,
     ) -> bool:
-        """
-        Validates student attributes against business rules.
-        Raises ValueError if any field fails validation constraints.
-        """
+        """Validates student domain attributes against institutional business rules."""
         if not student_id or not str(student_id).strip():
             raise ValueError("Student ID is mandatory and cannot be empty.")
         if not re.match(r"^[A-Za-z0-9_-]{3,20}$", str(student_id).strip()):
@@ -72,7 +89,7 @@ class Student:
 
     @staticmethod
     def calculate_grade(marks: float) -> tuple[str, float]:
-        """Maps percentage marks (0-100) to Letter Grade and Grade Points (10-point scale)."""
+        """Converts percentage score (0-100) to Letter Grade and 10-point Grade Points."""
         if marks < 0 or marks > 100:
             raise ValueError("Marks must be between 0.0 and 100.0.")
         if marks >= 90.0:
@@ -91,7 +108,7 @@ class Student:
             return "F", 0.0
 
     def record_mark(self, course_code: str, marks: float, credits: int = 3) -> Dict[str, Any]:
-        """Records academic marks for a course and updates cumulative GPA."""
+        """Submits course marks, calculates letter grade, and recalculates SGPA/CGPA."""
         letter_grade, grade_points = self.calculate_grade(marks)
         mark_entry = {
             "course_code": course_code.strip().upper(),
@@ -115,6 +132,14 @@ class Student:
 
         return mark_entry
 
+    def update_attendance(self, attended_sessions: int, total_sessions: int) -> float:
+        """Computes aggregate attendance percentage and triggers <75% warning flag."""
+        if total_sessions <= 0:
+            raise ValueError("Total sessions must be greater than zero.")
+        self.attendance_percentage = round((attended_sessions / total_sessions) * 100.0, 2)
+        self.attendance_warning = self.attendance_percentage < 75.0
+        return self.attendance_percentage
+
     def to_dict(self) -> Dict[str, Any]:
         """Serializes domain model to JSON-compatible dictionary."""
         return {
@@ -126,32 +151,42 @@ class Student:
             "enrolled_credits": self.enrolled_credits,
             "cumulative_gpa": round(self.cumulative_gpa, 2),
             "academic_standing": self.academic_standing,
+            "attendance_percentage": self.attendance_percentage,
+            "attendance_warning": self.attendance_warning,
             "marks_count": len(self.marks_history),
         }
 
 
-class StudentStore:
-    """Thread-safe in-memory store for Student entities with baseline seed data."""
+class DataStore:
+    """Thread-safe in-memory store for Students and Books with baseline seed data."""
 
     def __init__(self, seed: bool = True):
         self._lock = threading.RLock()
         self._students: Dict[str, Student] = {}
+        self._books: List[Book] = []
         if seed:
             self.seed_defaults()
 
     def seed_defaults(self) -> None:
-        """Seeds default students for immediate functional demonstration."""
+        """Seeds default books and students for immediate functional demonstration."""
         with self._lock:
             self._students.clear()
+            self._books.clear()
+
+            # Seed Smart Library baseline book (matching Om Tambe's verification output)
+            self._books.append(Book(id=1, title="The Great Gatsby", author="F. Scott Fitzgerald"))
+
+            # Seed Student Platform baseline students
             s1 = Student(
                 student_id="STD2026001",
                 name="Aarav Patel",
-                email="aarav.patel@university.edu",
+                email="aarav.patel@sandipuniversity.edu.in",
                 department="Computer Science",
-                semester=3,
+                semester=5,
                 enrolled_credits=18,
                 cumulative_gpa=8.85,
                 academic_standing="Good Standing",
+                attendance_percentage=88.5,
             )
             s1.record_mark("CS301", 88.0, credits=4)
             s1.record_mark("CS302", 92.0, credits=4)
@@ -159,20 +194,26 @@ class StudentStore:
             s2 = Student(
                 student_id="STD2026002",
                 name="Pooja Sharma",
-                email="pooja.sharma@university.edu",
+                email="pooja.sharma@sandipuniversity.edu.in",
                 department="Information Technology",
                 semester=4,
                 enrolled_credits=20,
                 cumulative_gpa=9.20,
                 academic_standing="Good Standing",
+                attendance_percentage=72.0,  # Below 75% -> attendance_warning: true
             )
             s2.record_mark("IT401", 94.0, credits=4)
 
             self._students[s1.student_id] = s1
             self._students[s2.student_id] = s2
 
-    def get_all(self, department: Optional[str] = None, semester: Optional[int] = None) -> List[Student]:
-        """Retrieves all students, optionally filtered by department or semester."""
+    def get_books(self) -> List[Book]:
+        """Returns all books in catalog."""
+        with self._lock:
+            return list(self._books)
+
+    def get_all_students(self, department: Optional[str] = None, semester: Optional[int] = None) -> List[Student]:
+        """Retrieves all students with optional filters."""
         with self._lock:
             results = list(self._students.values())
             if department:
@@ -181,26 +222,25 @@ class StudentStore:
                 results = [s for s in results if s.semester == semester]
             return results
 
-    def get_by_id(self, student_id: str) -> Optional[Student]:
-        """Finds a student by their unique student_id."""
+    def get_student_by_id(self, student_id: str) -> Optional[Student]:
+        """Looks up a single student by student_id."""
         with self._lock:
             return self._students.get(student_id.strip())
 
-    def create(self, data: Dict[str, Any]) -> Student:
-        """Validates and creates a new student in the datastore."""
+    def create_student(self, data: Dict[str, Any]) -> Student:
+        """Validates and creates a new student in store."""
         student_id = str(data.get("student_id", "")).strip()
         name = str(data.get("name", "")).strip()
         email = str(data.get("email", "")).strip()
         department = str(data.get("department", "Computer Science")).strip()
         semester = data.get("semester", 1)
+        attendance = float(data.get("attendance_percentage", 100.0))
 
-        # Validate domain constraints
         Student.validate(student_id, name, email, department, semester)
 
         with self._lock:
             if student_id in self._students:
                 raise KeyError(f"Student with ID '{student_id}' already exists.")
-            # Check email uniqueness
             for existing in self._students.values():
                 if existing.email.lower() == email.lower():
                     raise ValueError(f"Student with email '{email}' already registered.")
@@ -211,47 +251,20 @@ class StudentStore:
                 email=email,
                 department=department,
                 semester=int(semester),
+                attendance_percentage=attendance,
             )
             self._students[student_id] = student
             return student
 
-    def update(self, student_id: str, data: Dict[str, Any]) -> Optional[Student]:
-        """Updates mutable fields on an existing student."""
-        with self._lock:
-            student = self._students.get(student_id.strip())
-            if not student:
-                return None
-
-            if "name" in data and data["name"]:
-                student.name = str(data["name"]).strip()
-            if "department" in data and data["department"]:
-                student.department = str(data["department"]).strip()
-            if "semester" in data:
-                sem = int(data["semester"])
-                if 1 <= sem <= 12:
-                    student.semester = sem
-                else:
-                    raise ValueError("Semester must be between 1 and 12.")
-            if "academic_standing" in data and data["academic_standing"]:
-                student.academic_standing = str(data["academic_standing"]).strip()
-
-            return student
-
-    def delete(self, student_id: str) -> bool:
-        """Deletes a student record by ID."""
-        with self._lock:
-            if student_id.strip() in self._students:
-                del self._students[student_id.strip()]
-                return True
-            return False
-
     def reset(self, seed: bool = True) -> None:
-        """Resets the repository to empty or seed state for tests."""
+        """Resets store for tests."""
         with self._lock:
             self._students.clear()
+            self._books.clear()
             if seed:
                 self.seed_defaults()
 
 
-# Global repository instance
-student_store = StudentStore(seed=True)
+# Global datastore instance
+datastore = DataStore(seed=True)
+student_store = datastore  # Backwards compatibility alias

@@ -1,12 +1,13 @@
 """
 Enterprise Student Record & Academic Management Platform
 Flask REST API Microservice Entrypoint.
+Authored by Om Tambe (PRN: 2125UMLM1065) - Sandip University.
 """
 
 from datetime import datetime, timezone
 import os
 from flask import Flask, jsonify, request
-from .models import student_store, Student
+from .models import datastore, Student
 
 
 def create_app(test_config=None) -> Flask:
@@ -49,7 +50,7 @@ def create_app(test_config=None) -> Flask:
     def internal_error(error):
         return jsonify({
             "error": "Internal Server Error",
-            "message": "An unexpected error occurred on the server.",
+            "message": "An unexpected server error occurred.",
             "status_code": 500,
         }), 500
 
@@ -57,30 +58,51 @@ def create_app(test_config=None) -> Flask:
     # REST API Endpoints
     # -------------------------------------------------------------
 
+    @app.route("/", methods=["GET"])
+    def root():
+        """
+        Root endpoint displaying application operational status.
+        Matches Om Tambe's verification output:
+        {"application": "Smart Library Management Platform", "status": "running"}
+        """
+        return jsonify({
+            "application": "Smart Library Management Platform",
+            "status": "running",
+            "platform": "Student Record & Academic Management Platform",
+            "lead": "Om Tambe (PRN: 2125UMLM1065)",
+            "institution": "Sandip University",
+        }), 200
+
     @app.route("/api/health", methods=["GET"])
     def health_check():
         """
         Liveness and readiness health probe.
-        Returns:
-            JSON object confirming service status 'UP' with HTTP 200.
+        Matches Om Tambe's verification output: {"status": "healthy"}.
         """
         return jsonify({
-            "status": "UP",
+            "status": "healthy",
             "service": "student-academic-platform",
-            "version": "1.0.0",
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "total_students": len(student_store.get_all()),
+            "total_students": len(datastore.get_all_students()),
         }), 200
+
+    @app.route("/api/books", methods=["GET"])
+    def get_books():
+        """
+        Catalog retrieval endpoint for Smart Library platform compatibility.
+        Matches Om Tambe's verification output:
+        [{"author": "F. Scott Fitzgerald", "id": 1, "title": "The Great Gatsby"}]
+        """
+        books = datastore.get_books()
+        return jsonify([b.to_dict() for b in books]), 200
 
     @app.route("/api/students", methods=["GET"])
     def get_students():
         """
-        Lists all registered students with optional query filters.
+        Lists registered student records with optional filtering.
         Query Params:
-            department (str): Optional department filter (e.g. 'Computer Science')
-            semester (int): Optional semester filter (e.g. 3)
-        Returns:
-            JSON array of students with HTTP 200.
+            department (str): Filter by department name
+            semester (int): Filter by semester number
         """
         dept = request.args.get("department")
         sem_param = request.args.get("semester")
@@ -95,7 +117,7 @@ def create_app(test_config=None) -> Flask:
                     "status_code": 400,
                 }), 400
 
-        students = student_store.get_all(department=dept, semester=sem)
+        students = datastore.get_all_students(department=dept, semester=sem)
         return jsonify({
             "count": len(students),
             "students": [s.to_dict() for s in students],
@@ -104,12 +126,8 @@ def create_app(test_config=None) -> Flask:
     @app.route("/api/students", methods=["POST"])
     def create_student():
         """
-        Registers a new student record.
-        Expects JSON payload with student_id, name, email, department, semester.
-        Returns:
-            HTTP 201 Created with student payload on success.
-            HTTP 400 Bad Request on validation errors.
-            HTTP 409 Conflict if student_id or email already exists.
+        Registers a new student profile in the system.
+        Expects JSON with student_id, name, email, department, semester.
         """
         if not request.is_json:
             return jsonify({
@@ -127,7 +145,7 @@ def create_app(test_config=None) -> Flask:
             }), 400
 
         try:
-            student = student_store.create(data)
+            student = datastore.create_student(data)
             return jsonify({
                 "message": "Student record created successfully.",
                 "student": student.to_dict(),
@@ -139,7 +157,6 @@ def create_app(test_config=None) -> Flask:
                 "status_code": 409,
             }), 409
         except ValueError as ve:
-            # Check if this is duplicate email or validation failure
             err_msg = str(ve)
             if "already registered" in err_msg.lower():
                 return jsonify({
@@ -161,13 +178,8 @@ def create_app(test_config=None) -> Flask:
 
     @app.route("/api/students/<student_id>", methods=["GET"])
     def get_student_by_id(student_id: str):
-        """
-        Retrieves a single student record by their unique student_id.
-        Returns:
-            HTTP 200 with student details on success.
-            HTTP 404 if student does not exist.
-        """
-        student = student_store.get_by_id(student_id)
+        """Retrieves a single student profile by student_id."""
+        student = datastore.get_student_by_id(student_id)
         if not student:
             return jsonify({
                 "error": "Not Found",
@@ -184,12 +196,8 @@ def create_app(test_config=None) -> Flask:
     @app.route("/api/marks", methods=["POST"])
     def record_marks(student_id: str = None):
         """
-        Records marks for a student and computes cumulative GPA.
-        Accepts either /api/students/<student_id>/marks or /api/marks with student_id in body.
-        Expects:
-            course_code (str), marks (float, 0-100), credits (optional int, default 3).
-        Returns:
-            HTTP 201 Created with mark record and recalculated GPA.
+        Submits continuous assessment marks, converts to Letter Grade, and recalculates GPA.
+        Expects: course_code (str), marks (float 0-100), credits (int, default 3).
         """
         if not request.is_json:
             return jsonify({
@@ -207,7 +215,7 @@ def create_app(test_config=None) -> Flask:
                 "status_code": 400,
             }), 400
 
-        student = student_store.get_by_id(target_id)
+        student = datastore.get_student_by_id(target_id)
         if not student:
             return jsonify({
                 "error": "Not Found",
