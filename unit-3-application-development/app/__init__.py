@@ -1,8 +1,14 @@
-"""
-Enterprise Student Record & Academic Management Platform
-Application Package Initialization
-"""
+from flask import Flask
 
-from .main import create_app, app
 
-__all__ = ["create_app", "app"]
+def create_app():
+    """Application Factory pattern for Enterprise Student Record & Academic Management Platform."""
+    app = Flask(__name__)
+
+    from app.routes.api import api_bp
+    from app.routes.views import views_bp
+
+    app.register_blueprint(api_bp, url_prefix="/api")
+    app.register_blueprint(views_bp, url_prefix="")
+
+    return app

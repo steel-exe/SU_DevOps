@@ -1,3 +1,1 @@
-"""
-Unit and Integration Test Package for Student Academic Microservice.
-"""
+"""Test suite package initialization."""

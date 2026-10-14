@@ -150,15 +150,15 @@
 
     - name: "library_app : Copy application files"
       ansible.builtin.copy:
-        src: "../../unit-3-application-development/{{ item }}"
+        src: "../app/{{ item }}"
         dest: "{{ app_root_dir }}/{{ item }}"
         owner: ubuntu
         group: ubuntu
         mode: '0644'
       loop:
+        - app.py
         - requirements.txt
         - Dockerfile
-        - app
 
     - name: "library_app : Create persistent database directory"
       ansible.builtin.file:
