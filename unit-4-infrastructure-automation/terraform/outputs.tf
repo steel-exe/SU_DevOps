@@ -1,7 +1,7 @@
 # =============================================================================
 # Terraform Outputs Specification
 # Project: Enterprise Student Record & Smart Library Platform (SU_DevOps)
-# Student Lead: Om Tambe (PRN: 2125UMLM1065) - Sandip University
+# Student Lead: Shivraj Dhumal (PRN: 2125UMLM1008) - Sandip University
 # =============================================================================
 
 output "ec2_public_ip" {

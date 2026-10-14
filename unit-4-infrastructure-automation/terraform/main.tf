@@ -1,7 +1,7 @@
 # =============================================================================
 # HashiCorp Terraform Main Architecture Configuration
 # Project: Enterprise Student Record & Smart Library Platform (SU_DevOps)
-# Student Lead: Om Tambe (PRN: 2125UMLM1065) - Sandip University
+# Student Lead: Shivraj Dhumal (PRN: 2125UMLM1008) - Sandip University
 # Provisions AWS VPC, Subnet, IGW, Route Table, SG, EC2 & Encrypted S3
 # =============================================================================
 
@@ -23,7 +23,7 @@ provider "aws" {
     tags = {
       Project     = var.project_name
       Environment = var.environment
-      Lead        = "Om Tambe (2125UMLM1065)"
+      Lead        = "Shivraj Dhumal (2125UMLM1008)"
       Institution = "Sandip University"
       ManagedBy   = "Terraform"
     }

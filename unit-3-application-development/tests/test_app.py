@@ -1,6 +1,6 @@
 """
 Automated Pytest Suite for Enterprise Academic Platform.
-Authored by Om Tambe (PRN: 2125UMLM1065) - Sandip University.
+Authored by Shivraj Dhumal (PRN: 2125UMLM1008) - Sandip University.
 Validates /, /api/health, /api/books, /api/students, /api/courses, and HTTP status codes.
 """
 
@@ -59,8 +59,8 @@ def test_register_student_endpoint(client):
     """Verifies POST /api/students registers a student with HTTP 201."""
     payload = {
         "student_id": "S999",
-        "name": "Om Tambe",
-        "email": "om.tambe@sandipuniversity.edu.in",
+        "name": "Shivraj Dhumal",
+        "email": "shivraj.dhumal@sandipuniversity.edu.in",
         "department": "Computer Science",
         "semester": 6,
     }

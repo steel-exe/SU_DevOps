@@ -2,8 +2,7 @@
 # =============================================================================
 # Ansible Playbook: site.yml
 # Project: Enterprise Student Record & Smart Library Platform (SU_DevOps)
-# Student Lead: Om Tambe (PRN: 2125UMLM1065) - Sandip University
-# Matches exact execution sequence from Om Tambe's deployment verification
+# Student Lead: Shivraj Dhumal (PRN: 2125UMLM1008) - Sandip University
 # =============================================================================
 
 - name: Configure Smart Library Server
@@ -202,7 +201,7 @@
       ansible.builtin.debug:
         msg:
           - "=========================================================="
-          - "Student Lead: Om Tambe (PRN: 2125UMLM1065)"
+          - "Student Lead: Shivraj Dhumal (PRN: 2125UMLM1008)"
           - "Application: Smart Library & Student Academic Platform"
           - "Status: {{ health_check_result.json.status }}"
           - "Nginx Port: {{ nginx_port }}"

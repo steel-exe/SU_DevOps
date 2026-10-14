@@ -1,7 +1,7 @@
 # Enterprise Student Record & Academic Management Platform (`SU_DevOps`)
 
-**Project Lead:** Om Tambe  
-**PRN:** 2125UMLM1065  
+**Project Lead:** Shivraj Dhumal  
+**PRN:** 2125UMLM1008  
 **Academic Institution:** Sandip University  
 **Curriculum:** DevOps & Cloud Engineering Series  
 
@@ -15,7 +15,7 @@
 [![AWS Cloud](https://img.shields.io/badge/AWS-VPC%20%7C%20EC2%20%7C%20S3-FF9900.svg)](https://aws.amazon.com/)
 
 > **Comprehensive DevOps Engineering Repository across Units 1, 2, 3, and 4.**  
-> Built and submitted by **Om Tambe (PRN: 2125UMLM1065)**. Demonstrates the complete software delivery lifecycle—from initial product discovery, Word (.docx) formal project submissions, and Agile backlog grooming, to full-stack microservice engineering, continuous integration with Jenkins, and automated multi-tier AWS cloud infrastructure provisioning using Terraform and Ansible.
+> Built and submitted by **Shivraj Dhumal (PRN: 2125UMLM1008)**. Demonstrates the complete software delivery lifecycle—from initial product discovery, Word (.docx) formal project submissions, and Agile backlog grooming, to full-stack microservice engineering, continuous integration with Jenkins, and automated multi-tier AWS cloud infrastructure provisioning using Terraform and Ansible.
 
 ---
 
@@ -30,21 +30,10 @@ SU_DevOps/
 │       └── ci.yml                               # Automated GitHub Actions CI test pipeline
 │
 ├── unit-1-product-engineering/                  # Unit 1: Product Discovery & Specification
-│   ├── README.md                                # Unit overview & methodology guide
-│   ├── BRD.md                                   # Business Requirements Document (KPIs, RACI, Scope)
-│   ├── FRS_NFRS_Specification.md                # Functional (FR-01 to FR-06) & NFRS (NFR-01 to NFR-05)
-│   ├── Design_Thinking_Report.md                # IBM Loop (Observe, Reflect, Make) & 3 IBM Hills
-│   ├── User_Personas.md                         # Detailed Personas: Aarav Patel, Dr. Priya Sharma, Rahul Verma
-│   ├── System_Architecture.md                   # Multi-tier system architecture & security topology
-│   ├── Om_Tambe_2125UMLM1065_DevOps_Unit1_MiniProject.docx  # Formal Word Submission Document
-│   └── Unit-1-Product-Engineering.docx          # Project submission document
+│   └── Unit-1-Product-Engineering.docx          # Formal Word Submission Document
 │
 ├── unit-2-agile-planning/                       # Unit 2: Agile Project Management & Scrum
-│   ├── README.md                                # Scrum framework overview & ceremony guide
-│   ├── Product_Backlog.md                       # Prioritized backlog table with story points & acceptance criteria
-│   ├── Sprint_Plan.md                           # 2-Sprint plan, DoD/DoR & 7-framework comparative study
-│   ├── Unit-2-Agile-Mini-Project.docx           # Formal Word Agile Submission Document
-│   └── Om_Tambe_2125UMLM1065_DevOps_Unit2_MiniProject.docx  # Formatted Agile Project Documentation
+│   └── Unit-2-Agile-Mini-Project.docx           # Formal Word Agile Submission Document
 │
 ├── unit-3-application-development/              # Unit 3: Enterprise Microservice & Full Stack Task
 │   ├── Dockerfile                               # Multi-stage production container definition
@@ -160,4 +149,4 @@ git push -u origin main
 ```
 
 ---
-*Created and submitted by **Om Tambe (PRN: 2125UMLM1065)**, Sandip University.*
+*Created and submitted by **Shivraj Dhumal (PRN: 2125UMLM1008)**, Sandip University.*

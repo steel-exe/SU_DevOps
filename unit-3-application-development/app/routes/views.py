@@ -12,7 +12,7 @@ def dashboard():
             "application": "Smart Library Management Platform",
             "status": "running",
             "platform": "Student Record & Academic Management Platform",
-            "lead": "Om Tambe (PRN: 2125UMLM1065)",
+            "lead": "Shivraj Dhumal (PRN: 2125UMLM1008)",
             "institution": "Sandip University",
         }), 200
     stats = StudentService.get_dashboard_stats()
